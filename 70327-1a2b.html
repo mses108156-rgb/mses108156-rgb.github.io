@@ -1,0 +1,417 @@
+<div style="display:flex;gap:10px;margin-top:15px;flex-wrap:wrap;">
+
+    <button class="restart-btn" onclick="newGame()">
+        重新開始
+    </button>
+
+    <button class="restart-btn" onclick="toggleMusic()" id="musicBtn">
+        🎵 提瓦特旋律 OFF
+    </button>
+
+</div><!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>提瓦特 1A2B 猜數字</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:'Noto Sans TC',sans-serif;
+    min-height:100vh;
+    background:
+        linear-gradient(rgba(8,18,35,.75),rgba(8,18,35,.85)),
+        url("https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1920&auto=format&fit=crop");
+    background-size:cover;
+    background-position:center;
+    color:#fff;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:20px;
+}
+
+.container{
+    width:100%;
+    max-width:850px;
+    background:rgba(12,25,48,.88);
+    backdrop-filter:blur(10px);
+    border:2px solid #d9b76b;
+    border-radius:24px;
+    box-shadow:0 0 30px rgba(217,183,107,.35);
+    padding:30px;
+}
+
+.title{
+    text-align:center;
+    font-size:2.4rem;
+    color:#f6d58f;
+    margin-bottom:10px;
+    text-shadow:0 0 15px rgba(246,213,143,.5);
+}
+
+.subtitle{
+    text-align:center;
+    color:#cfd9ff;
+    margin-bottom:25px;
+}
+
+.panel{
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(217,183,107,.4);
+    border-radius:16px;
+    padding:20px;
+}
+
+.input-area{
+    display:flex;
+    gap:10px;
+    margin-top:15px;
+}
+
+input{
+    flex:1;
+    padding:14px;
+    font-size:1.2rem;
+    border:none;
+    border-radius:12px;
+    outline:none;
+    text-align:center;
+    letter-spacing:3px;
+}
+
+button{
+    border:none;
+    cursor:pointer;
+    border-radius:12px;
+    padding:14px 22px;
+    font-size:1rem;
+    font-weight:bold;
+    transition:.25s;
+}
+
+.guess-btn{
+    background:#d9b76b;
+    color:#13213c;
+}
+
+.guess-btn:hover{
+    transform:translateY(-2px);
+    box-shadow:0 0 15px #d9b76b;
+}
+
+.restart-btn{
+    background:#4a8fff;
+    color:white;
+    margin-top:15px;
+}
+
+.restart-btn:hover{
+    box-shadow:0 0 15px #4a8fff;
+}
+
+.info{
+    margin-top:15px;
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+}
+
+.status{
+    color:#f6d58f;
+    font-weight:bold;
+}
+
+.history{
+    margin-top:25px;
+    max-height:350px;
+    overflow-y:auto;
+}
+
+.history-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:rgba(255,255,255,.06);
+    margin-bottom:10px;
+    padding:12px 15px;
+    border-radius:10px;
+    border-left:4px solid #d9b76b;
+}
+
+.result{
+    color:#f6d58f;
+    font-weight:bold;
+}
+
+.win{
+    animation:glow 1s infinite alternate;
+}
+
+@keyframes glow{
+    from{
+        box-shadow:0 0 10px #d9b76b;
+    }
+    to{
+        box-shadow:0 0 30px #ffd67a;
+    }
+}
+
+.victory{
+    margin-top:20px;
+    text-align:center;
+    font-size:1.6rem;
+    color:#ffe7aa;
+    display:none;
+}
+
+.footer{
+    margin-top:15px;
+    text-align:center;
+    color:#aab8e6;
+    font-size:.9rem;
+}
+
+::-webkit-scrollbar{
+    width:8px;
+}
+::-webkit-scrollbar-thumb{
+    background:#d9b76b;
+    border-radius:20px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1 class="title">✦ 提瓦特 1A2B ✦</h1>
+    <p class="subtitle">
+        猜出神秘的四位數字（數字不重複）
+    </p>
+
+    <div class="panel">
+
+        <div class="input-area">
+            <input
+                id="guessInput"
+                maxlength="4"
+                placeholder="輸入4位數"
+            >
+            <button class="guess-btn" onclick="guessNumber()">
+                猜測
+            </button>
+        </div>
+
+        <div class="info">
+            <div class="status" id="message">
+                開始冒險吧！
+            </div>
+            <div>
+                次數：<span id="count">0</span>
+            </div>
+        </div>
+
+        <button class="restart-btn" onclick="newGame()">
+            重新開始
+        </button>
+
+        <div class="victory" id="victory">
+            🎉 恭喜你找到提瓦特的秘密數字！
+        </div>
+
+        <div class="history" id="history"></div>
+
+    </div>
+
+    <div class="footer">
+        Genshin-inspired Style • 1A2B Number Game
+    </div>
+
+</div>
+
+<script>
+
+let answer = "";
+let count = 0;
+let gameOver = false;
+
+function generateAnswer(){
+
+    let nums = [];
+
+    while(nums.length < 4){
+
+        let n = Math.floor(Math.random()*10).toString();
+
+        if(!nums.includes(n)){
+            nums.push(n);
+        }
+    }
+
+    return nums.join("");
+}
+
+function newGame(){
+
+    answer = generateAnswer();
+    count = 0;
+    gameOver = false;
+
+    document.getElementById("count").textContent = 0;
+    document.getElementById("history").innerHTML = "";
+    document.getElementById("victory").style.display = "none";
+    document.getElementById("message").textContent = "新的冒險開始！";
+
+    console.log("答案:",answer);
+}
+
+function validInput(str){
+
+    if(!/^\d{4}$/.test(str))
+        return false;
+
+    let set = new Set(str);
+
+    return set.size === 4;
+}
+
+function calculateAB(guess){
+
+    let A = 0;
+    let B = 0;
+
+    for(let i=0;i<4;i++){
+
+        if(guess[i] === answer[i]){
+            A++;
+        }
+        else if(answer.includes(guess[i])){
+            B++;
+        }
+    }
+
+    return {A,B};
+}
+
+function guessNumber(){
+
+    if(gameOver) return;
+
+    let input = document.getElementById("guessInput");
+    let guess = input.value.trim();
+
+    if(!validInput(guess)){
+        document.getElementById("message").textContent =
+        "請輸入不重複的4位數字！";
+        return;
+    }
+
+    count++;
+    document.getElementById("count").textContent = count;
+
+    let result = calculateAB(guess);
+
+    let item = document.createElement("div");
+    item.className = "history-item";
+
+    item.innerHTML =
+    `
+    <span>第 ${count} 次：${guess}</span>
+    <span class="result">${result.A}A${result.B}B</span>
+    `;
+
+    document.getElementById("history")
+    .prepend(item);
+
+    if(result.A === 4){
+
+        gameOver = true;
+
+        document.getElementById("message").textContent =
+        `成功解開秘密數字：${answer}`;
+
+        let victory =
+        document.getElementById("victory");
+
+        victory.style.display = "block";
+        victory.classList.add("win");
+
+        createFireworks();
+
+    }else{
+
+        document.getElementById("message").textContent =
+        `${result.A}A${result.B}B，繼續努力！`;
+    }
+
+    input.value = "";
+}
+
+function createFireworks(){
+
+    for(let i=0;i<40;i++){
+
+        let star = document.createElement("div");
+
+        star.style.position="fixed";
+        star.style.left=Math.random()*100+"vw";
+        star.style.top=Math.random()*100+"vh";
+        star.style.width="8px";
+        star.style.height="8px";
+        star.style.borderRadius="50%";
+        star.style.background=
+        ["#ffd700","#fff","#89c4ff","#ffcc88"]
+        [Math.floor(Math.random()*4)];
+
+        star.style.pointerEvents="none";
+        star.style.zIndex="9999";
+
+        document.body.appendChild(star);
+
+        star.animate(
+        [
+            {
+                transform:"scale(0)",
+                opacity:1
+            },
+            {
+                transform:"scale(3)",
+                opacity:0
+            }
+        ],
+        {
+            duration:1500,
+            easing:"ease-out"
+        });
+
+        setTimeout(()=>{
+            star.remove();
+        },1500);
+    }
+}
+
+document.getElementById("guessInput")
+.addEventListener("keydown",(e)=>{
+    if(e.key==="Enter"){
+        guessNumber();
+    }
+});
+
+newGame();
+
+</script>
+
+</body>
+</htmldocument.getElementById("paimonText").textContent =
+"旅行者！快來猜猜這個神秘數字吧！";>
+    
